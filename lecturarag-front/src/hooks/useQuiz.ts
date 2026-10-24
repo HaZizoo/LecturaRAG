@@ -1,27 +1,44 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { api, getErrorMessage } from "../lib/api";
 import type { Quiz } from "../lib/types";
 
+interface QuizState {
+  documentId: string | null;
+  quiz: Quiz | null;
+}
+
 export function useQuiz(documentId: string | null) {
-  const [quiz, setQuiz] = useState<Quiz | null>(null);
+  const [quizState, setQuizState] = useState<QuizState>({ documentId: null, quiz: null });
   const [isLoading, setIsLoading] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const requestToken = useRef(0);
+  const activeDocument = useRef(documentId);
+  activeDocument.current = documentId;
+
+  const quiz = quizState.documentId === documentId ? quizState.quiz : null;
 
   const load = useCallback(async () => {
+    const token = ++requestToken.current;
     if (!documentId) {
-      setQuiz(null);
+      setQuizState({ documentId: null, quiz: null });
+      setIsLoading(false);
+      setError(null);
       return;
     }
+
     setIsLoading(true);
     setError(null);
     try {
       const payload = await api.getQuizzes(documentId);
-      setQuiz(payload.quizzes[0] ?? null);
+      if (token !== requestToken.current) return;
+      setQuizState({ documentId, quiz: payload.quizzes[0] ?? null });
     } catch (err) {
+      if (token !== requestToken.current) return;
+      setQuizState({ documentId, quiz: null });
       setError(getErrorMessage(err));
     } finally {
-      setIsLoading(false);
+      if (token === requestToken.current) setIsLoading(false);
     }
   }, [documentId]);
 
@@ -36,10 +53,12 @@ export function useQuiz(documentId: string | null) {
       setError(null);
       try {
         const created = await api.generateQuiz(documentId, numQuestions);
-        setQuiz(created);
+        // A switch mid-generation must not overwrite the new lecture's quiz.
+        if (activeDocument.current !== documentId) return false;
+        setQuizState({ documentId, quiz: created });
         return true;
       } catch (err) {
-        setError(getErrorMessage(err));
+        if (activeDocument.current === documentId) setError(getErrorMessage(err));
         return false;
       } finally {
         setIsGenerating(false);
@@ -50,7 +69,7 @@ export function useQuiz(documentId: string | null) {
 
   return {
     quiz,
-    isLoading,
+    isLoading: isLoading || (documentId !== null && quizState.documentId !== documentId),
     isGenerating,
     error,
     generate,

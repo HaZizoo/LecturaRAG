@@ -47,6 +47,10 @@ def get_db() -> Iterator[Session]:
     db = SessionLocal()
     try:
         yield db
+    except Exception:
+        # Never leave a failed transaction open on a pooled connection.
+        db.rollback()
+        raise
     finally:
         db.close()
 

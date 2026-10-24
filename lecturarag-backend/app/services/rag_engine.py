@@ -241,8 +241,26 @@ def term_set(text: str) -> set[str]:
 # --------------------------------------------------------------------------- #
 
 
+_FILENAME_CONTROL_RE = re.compile(r"[\x00-\x1f\x7f]")
+
+
+def sanitize_filename(filename: str) -> str:
+    """Strip directory components and control characters from an upload name."""
+
+    # Treat both separators as path separators, even on POSIX, so a Windows
+    # path can never sneak through as a literal filename.
+    name = Path(str(filename).replace("\\", "/")).name
+    name = _FILENAME_CONTROL_RE.sub("", name).strip().strip(".")
+    if not name:
+        return "lecture"
+    if len(name) > 255:
+        suffix = Path(name).suffix[:16]
+        name = f"{name[: 255 - len(suffix)].rstrip()}{suffix}"
+    return name
+
+
 def detect_file_type(filename: str) -> str:
-    suffix = Path(filename).suffix.lower()
+    suffix = Path(sanitize_filename(filename)).suffix.lower()
     if suffix == ".pdf":
         return "pdf"
     if suffix in {".md", ".markdown"}:
@@ -265,25 +283,32 @@ def _parse_pdf(data: bytes) -> list[ParsedPage]:
     try:
         reader = PdfReader(io.BytesIO(data))
     except Exception as exc:  # pragma: no cover - depends on malformed input
-        raise ValueError(f"Could not read the PDF: {exc}") from exc
+        raise ValueError("Could not read the PDF. The file may be corrupted.") from exc
 
     if reader.is_encrypted:
         try:
-            reader.decrypt("")
+            decrypted = reader.decrypt("")
         except Exception as exc:  # pragma: no cover - depends on the PDF
             raise ValueError("Password-protected PDFs are not supported.") from exc
+        if not decrypted:
+            raise ValueError("Password-protected PDFs are not supported.")
+
+    try:
+        page_count = len(reader.pages)
+    except Exception as exc:  # pragma: no cover - malformed page tree
+        raise ValueError("Could not read the PDF. The file may be corrupted.") from exc
 
     pages: list[ParsedPage] = []
-    for index, page in enumerate(reader.pages, start=1):
+    for index in range(page_count):
         try:
-            raw = page.extract_text() or ""
+            raw = reader.pages[index].extract_text() or ""
         except Exception:  # pragma: no cover - one broken page should not fail the upload
             raw = ""
-        text = normalize_whitespace(raw)
-        if len(text) >= 2:
-            pages.append(ParsedPage(page_number=index, text=text))
+        # Keep blank pages so `page_count` reflects the physical PDF, but they
+        # produce no chunks and therefore never invent citations.
+        pages.append(ParsedPage(page_number=index + 1, text=normalize_whitespace(raw)))
 
-    if not pages:
+    if not any(page.text for page in pages):
         raise ValueError(
             "No extractable text found in the PDF. Scanned documents need OCR before upload."
         )
@@ -299,6 +324,8 @@ def _parse_markdown(data: bytes) -> list[ParsedPage]:
     text = text.replace("\r\n", "\n").replace("\r", "\n").strip()
     if not text:
         raise ValueError("The uploaded Markdown file is empty.")
+    if "\x00" in text:
+        raise ValueError("The uploaded Markdown file does not contain readable text.")
 
     marker_numbers = [int(number) for number in PAGE_MARKER.findall(text)]
     if marker_numbers:
@@ -323,6 +350,8 @@ def _pages_from_markers(text: str) -> list[ParsedPage]:
         pages.append(ParsedPage(page_number=1, text=preamble))
     for i in range(1, len(parts), 2):
         number = int(parts[i])
+        if number < 1:
+            raise ValueError("Markdown page markers must use page numbers of 1 or greater.")
         body = normalize_whitespace(parts[i + 1] if i + 1 < len(parts) else "")
         if body:
             pages.append(ParsedPage(page_number=number, text=body))
@@ -357,7 +386,7 @@ def extract_title(filename: str, pages: Sequence[ParsedPage], file_type: str, da
     if file_type == "pdf":
         try:
             metadata = PdfReader(io.BytesIO(data)).metadata or {}
-            title = (metadata.get("/Title") or "").strip()
+            title = str(metadata.get("/Title") or "").strip()
             if title and title.lower() not in {"untitled", "document"}:
                 return title[:200]
         except Exception:  # pragma: no cover - metadata is optional
@@ -510,7 +539,7 @@ def prepare_document(
     title_override: str | None = None,
 ) -> PreparedDocument:
     config = settings or get_settings()
-    safe_name = Path(filename).name or "lecture.pdf"
+    safe_name = sanitize_filename(filename)
     file_type, pages = extract_pages(safe_name, data)
     chunks = chunk_pages(pages, chunk_size=config.chunk_size, overlap=config.chunk_overlap)
     if not chunks:

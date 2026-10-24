@@ -114,6 +114,7 @@ Leave `LLM_API_KEY` empty to use the deterministic engine. The backend reports t
 | `npm run build` | Type-checks and builds the frontend |
 | `npm run seed` | Seeds the sample lecture (run inside an activated venv) |
 | `npm run typecheck` | `tsc --noEmit` for the frontend |
+| `npm run test:api` | Runs the in-process FastAPI test suite (no server needed) |
 | `npm run setup` | Installs root and frontend npm dependencies |
 
 ## API
@@ -152,7 +153,20 @@ npx tsc --noEmit
 npm run build
 ```
 
-Both complete with zero TypeScript or bundler errors. The app was exercised end to end against the live backend: upload/index, cited chat with expandable sources, flashcard flip and mastery persistence, quiz validation, timing, grading, and results review.
+Both complete with zero TypeScript or bundler errors.
+
+The backend suite uses `TestClient` in-process (no server, no network) and a throwaway SQLite database:
+
+```bash
+cd lecturarag-backend
+python tests/test_api.py
+# or, from the repo root with the venv active:
+npm run test:api
+```
+
+It covers health, loopback CORS, upload validation (empty, oversized, corrupt/encrypted PDF, path traversal), short-document edge cases, cited chat, flashcard generation and mastery, quiz validation and grading, and cascading deletes across every child table.
+
+The app was also exercised end to end in the browser: upload/index, cited chat with expandable sources, flashcard flip and mastery persistence, quiz validation, timing, grading, and results review.
 
 ## License
 

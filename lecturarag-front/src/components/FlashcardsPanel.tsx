@@ -81,7 +81,12 @@ export function FlashcardsPanel({
     const handleKey = (event: KeyboardEvent) => {
       if (event.code !== "Space" || event.repeat) return;
       const target = event.target as HTMLElement | null;
-      if (target?.closest("button, a, input, textarea, select")) return;
+      if (
+        target?.isContentEditable ||
+        target?.closest("button, a, input, textarea, select, [role='textbox']")
+      ) {
+        return;
+      }
       event.preventDefault();
       setFlipped((current) => !current);
     };

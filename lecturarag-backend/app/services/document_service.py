@@ -44,7 +44,9 @@ def ingest_document(
         filename=prepared.filename,
         title=prepared.title,
         file_type=prepared.file_type,
-        page_count=len(prepared.pages),
+        # Explicit Markdown page markers may skip numbers; report the highest
+        # page so citation badges never exceed the document's page count.
+        page_count=max((page.page_number for page in prepared.pages), default=0),
         chunk_count=len(prepared.chunks),
         char_count=prepared.char_count,
     )
