@@ -1,0 +1,18 @@
+{
+  "name": "lecturarag",
+  "private": true,
+  "version": "1.0.0",
+  "description": "LecturaRAG - a cited RAG study workspace for lecture PDFs",
+  "scripts": {
+    "dev": "concurrently -k -n API,WEB -c yellow,cyan \"npm:dev:backend\" \"npm:dev:frontend\"",
+    "dev:backend": "cd lecturarag-backend && python -m uvicorn app.main:app --reload --port 8000",
+    "dev:frontend": "npm --prefix lecturarag-front run dev",
+    "build": "npm --prefix lecturarag-front run build",
+    "seed": "cd lecturarag-backend && python seed_sample.py",
+    "typecheck": "npm --prefix lecturarag-front run typecheck",
+    "setup": "npm install && npm --prefix lecturarag-front install"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.0"
+  }
+}
