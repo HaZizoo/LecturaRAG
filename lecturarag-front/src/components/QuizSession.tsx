@@ -39,13 +39,17 @@ export function QuizSession({ quiz, isActive, onExit, onRestart }: QuizSessionPr
   const [attempt, setAttempt] = useState<QuizAttempt | null>(null);
   const [error, setError] = useState<string | null>(null);
   const timeoutFired = useRef(false);
+  const checkingRef = useRef(false);
 
   const current = quiz.questions[index];
   const currentCheck = checks[index];
 
   const reveal = useCallback(
     async (choice: number | null) => {
-      if (!current || revealed || isChecking || finished) return;
+      // The timer and a click can fire in the same tick; guard synchronously
+      // so a question is never submitted twice (double score / wrong answer).
+      if (!current || revealed || isChecking || checkingRef.current || finished) return;
+      checkingRef.current = true;
       setIsChecking(true);
       setError(null);
       setSelected(choice);
@@ -67,6 +71,7 @@ export function QuizSession({ quiz, isActive, onExit, onRestart }: QuizSessionPr
       } catch (err) {
         setError(getErrorMessage(err));
       } finally {
+        checkingRef.current = false;
         setIsChecking(false);
       }
     },

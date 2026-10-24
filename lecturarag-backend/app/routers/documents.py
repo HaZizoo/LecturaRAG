@@ -15,7 +15,7 @@ from app.schemas import (
     DocumentUploadResponse,
 )
 from app.services.document_service import delete_document, get_document, ingest_document
-from app.services.rag_engine import detect_file_type
+from app.services.rag_engine import detect_file_type, sanitize_filename
 
 router = APIRouter(prefix="/api/documents", tags=["documents"])
 
@@ -31,7 +31,7 @@ def upload_document(
     db: Session = Depends(get_db),
     settings: Settings = Depends(get_settings),
 ) -> DocumentUploadResponse:
-    filename = file.filename or ""
+    filename = sanitize_filename(file.filename or "")
     try:
         detect_file_type(filename)
     except ValueError as exc:
@@ -42,7 +42,7 @@ def upload_document(
         raise HTTPException(status_code=400, detail="The uploaded file is empty.")
     if len(payload) > settings.max_upload_bytes:
         raise HTTPException(
-            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            status_code=status.HTTP_413_CONTENT_TOO_LARGE,
             detail=f"File exceeds the {settings.max_upload_mb} MB upload limit.",
         )
 

@@ -44,9 +44,15 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+# Vite falls back to the next free port when 5173 is taken. Allow any loopback
+# port so local testing never fails CORS, while production origins still come
+# from the explicit CORS_ORIGINS list.
+_LOOPBACK_ORIGIN_REGEX = r"^https?://(localhost|127\.0\.0\.1)(:\d+)?$"
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origin_list,
+    allow_origin_regex=_LOOPBACK_ORIGIN_REGEX,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

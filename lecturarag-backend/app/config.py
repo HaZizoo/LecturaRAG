@@ -29,7 +29,10 @@ class Settings(BaseSettings):
     environment: str = "development"
 
     database_url: str = f"sqlite:///{(BACKEND_ROOT / 'lecturarag.db').as_posix()}"
-    cors_origins: str = "http://localhost:5173"
+    cors_origins: str = (
+        "http://localhost:5173,http://127.0.0.1:5173,"
+        "http://localhost:5174,http://127.0.0.1:5174"
+    )
 
     max_upload_mb: int = Field(default=20, ge=1, le=200)
     chunk_size: int = Field(default=500, ge=200, le=4000)
