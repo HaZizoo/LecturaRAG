@@ -1,5 +1,7 @@
 # LecturaRAG
 
+![CI](https://github.com/HaZizoo/LecturaRAG/actions/workflows/ci.yml/badge.svg)
+
 A full-stack, citation-first study workspace for lecture PDFs and Markdown notes. Upload a lecture, then chat with it, drill 3D flashcards, and take a timed quiz — every answer points back to the exact page it came from.
 
 The portfolio detail: **it works with no API key.** When `LLM_API_KEY` is empty (or the provider fails), a deterministic extractive engine builds cited answers, flashcards, and quiz questions directly from the uploaded text, so the whole app can be cloned and tested offline.
