@@ -1,5 +1,27 @@
 # LecturaRAG
 
+Citation-first study workspace that turns lecture PDFs and Markdown into sourced chat, flashcards, and quizzes.
+
+![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=white) ![FastAPI](https://img.shields.io/badge/FastAPI-0.115-009688?logo=fastapi&logoColor=white) ![SQLite](https://img.shields.io/badge/SQLite-local-003B57?logo=sqlite&logoColor=white)
+
+## Visual Preview
+
+Add screenshots or a short GIF under `docs/` when a representative study session is available.
+
+## System Architecture
+
+```mermaid
+flowchart LR
+  B[Browser] --> R[React workspace]
+  R --> A[FastAPI]
+  A --> D[(SQLite)]
+  A --> P[PDF / Markdown parser]
+  A --> V[Local deterministic retrieval]
+  A -. optional .-> L[OpenAI-compatible LLM]
+```
+
+See the [interactive architecture map](docs/architecture.html). Page-aware chunks retain provenance, while the local retrieval and deterministic fallback keep the core study flow available without an API key.
+
 ![CI](https://github.com/HaZizoo/LecturaRAG/actions/workflows/ci.yml/badge.svg)
 
 A full-stack, citation-first study workspace for lecture PDFs and Markdown notes. Upload a lecture, then chat with it, drill 3D flashcards, and take a timed quiz — every answer points back to the exact page it came from.

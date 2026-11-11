@@ -1,0 +1,5 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><title>LecturaRAG architecture</title><body><h1>LecturaRAG runtime architecture</h1><pre>Browser → React workspace → FastAPI → SQLite
+                              ├→ PDF / Markdown parser
+                              ├→ local hashed-vector retrieval
+                              └→ optional OpenAI-compatible LLM</pre><p>Every answer retains page-aware source citations; deterministic fallback keeps the study flow runnable offline.</p></body></html>
