@@ -6,7 +6,13 @@ Citation-first study workspace that turns lecture PDFs and Markdown into sourced
 
 ## Visual Preview
 
-Add screenshots or a short GIF under `docs/` when a representative study session is available.
+The workflow moves from page-cited chat to active recall and timed assessment without leaving the lecture context.
+
+![Cited chat workspace](docs/screenshots/cited-chat.png)
+
+![Flashcard review](docs/screenshots/flashcards.png)
+
+![Timed quiz](docs/screenshots/timed-quiz.png)
 
 ## System Architecture
 
