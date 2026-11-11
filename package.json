@@ -8,8 +8,10 @@
     "dev:backend": "cd lecturarag-backend && python -m uvicorn app.main:app --reload --port 8000",
     "dev:frontend": "npm --prefix lecturarag-front run dev",
     "build": "npm --prefix lecturarag-front run build",
+    "lint": "npm --prefix lecturarag-front run typecheck",
     "seed": "cd lecturarag-backend && python seed_sample.py",
     "test:api": "cd lecturarag-backend && python tests/test_api.py",
+    "test": "npm run test:api",
     "typecheck": "npm --prefix lecturarag-front run typecheck",
     "setup": "npm install && npm --prefix lecturarag-front install"
   },
