@@ -34,7 +34,7 @@ class Settings(BaseSettings):
         "http://localhost:5174,http://127.0.0.1:5174"
     )
 
-    max_upload_mb: int = Field(default=20, ge=1, le=200)
+    max_upload_mb: int = Field(default=10, ge=1, le=200)
     chunk_size: int = Field(default=500, ge=200, le=4000)
     chunk_overlap: int = Field(default=100, ge=0, le=1000)
     retrieval_top_k: int = Field(default=4, ge=1, le=10)

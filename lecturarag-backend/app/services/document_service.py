@@ -38,34 +38,38 @@ def ingest_document(
     """Parse, chunk, embed and persist an uploaded lecture."""
 
     config = settings or get_settings()
-    prepared = prepare_document(filename, data, settings=config, title_override=title_override)
+    try:
+        prepared = prepare_document(filename, data, settings=config, title_override=title_override)
 
-    document = Document(
-        filename=prepared.filename,
-        title=prepared.title,
-        file_type=prepared.file_type,
-        # Explicit Markdown page markers may skip numbers; report the highest
-        # page so citation badges never exceed the document's page count.
-        page_count=max((page.page_number for page in prepared.pages), default=0),
-        chunk_count=len(prepared.chunks),
-        char_count=prepared.char_count,
-    )
-    db.add(document)
-    db.flush()
-
-    for chunk in prepared.chunks:
-        db.add(
-            Chunk(
-                document_id=document.id,
-                chunk_index=chunk.chunk_index,
-                page_number=chunk.page_number,
-                content=chunk.content,
-                char_count=len(chunk.content),
-                embedding=serialize_embedding(chunk.embedding),
-            )
+        document = Document(
+            filename=prepared.filename,
+            title=prepared.title,
+            file_type=prepared.file_type,
+            # Explicit Markdown page markers may skip numbers; report the highest
+            # page so citation badges never exceed the document's page count.
+            page_count=max((page.page_number for page in prepared.pages), default=0),
+            chunk_count=len(prepared.chunks),
+            char_count=prepared.char_count,
         )
+        db.add(document)
+        db.flush()
 
-    db.commit()
+        for chunk in prepared.chunks:
+            db.add(
+                Chunk(
+                    document_id=document.id,
+                    chunk_index=chunk.chunk_index,
+                    page_number=chunk.page_number,
+                    content=chunk.content,
+                    char_count=len(chunk.content),
+                    embedding=serialize_embedding(chunk.embedding),
+                )
+            )
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise
+
     db.refresh(document)
     return document
 
